@@ -1,0 +1,32 @@
+.search-bar {
+    position: relative;
+    flex-grow: 1;
+    max-width: 500px;
+    margin: 0 15px;
+  }
+  
+  .search-loading {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  .table-responsive {
+    min-height: 300px;
+  }
+
+  /* Add to your component's CSS or global styles */
+.badge {
+    padding: 0.35em 0.65em;
+    font-size: 0.75em;
+    font-weight: 500;
+  }
+  
+  .btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.765rem;
+  }
+  
+  /* For the icons (if using Bootstrap Icons) */
+  @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css");

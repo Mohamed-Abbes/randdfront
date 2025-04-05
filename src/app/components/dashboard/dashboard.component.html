@@ -1,0 +1,135 @@
+<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="#" routerLink="/dashboard">Hello <h3>{{fullName}}</h3></a>
+    <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="navbar-nav">
+      <div class="nav-item text-nowrap">
+        <a style="background: red; color: #fff; border-radius: 4px; margin: 10px;" class="nav-link px-3" (click)="logout()">Sign out</a>
+      </div>
+    </div>
+  </header>
+  
+  <div class="container-fluid">
+    <div class="row">
+      <ng-container *ngIf="role === 'ADMIN'">
+        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+          <!-- sidebar -->
+          <h1>Admin powers</h1>
+           <ul>
+            <li><a>option 1</a></li>
+            <li><a>option 2</a></li>
+            <li><a>option 3</a></li>
+           </ul>
+          <!-- ... -->
+        </nav>
+      </ng-container>
+
+      <ng-container *ngIf="role === 'MODERATOR'">
+        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+          <!-- sidebar  -->
+           <h1>Moderator powers</h1>
+           <ul>
+            <li><a>option 1</a></li>
+            <li><a>option 2</a></li>
+            <li><a>option 3</a></li>
+           </ul>
+          <!-- ... -->
+        </nav>
+      </ng-container>
+  
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <div class="chartjs-size-monitor">
+          <div class="chartjs-size-monitor-expand">
+            <div class=""></div>
+          </div>
+          <div class="chartjs-size-monitor-shrink">
+            <div class=""></div>
+          </div>
+        </div>
+        <ng-container *ngIf="role === 'ADMIN'" >
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          <h1 class="h2">Dashboard</h1>
+          <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar align-text-bottom" ><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              This week
+            </button>
+          </div>
+        </div>
+  
+        <h2>Employee List</h2>
+        <div class="search-bar border border-dark">
+            <input matInput [formControl]="searchControl" class="form-control form-control-dark w-100 rounded-0 border-0" type="text" placeholder="Search by name, username or email..." aria-label="Search users">
+            <div *ngIf="isLoading" class="search-loading">
+              <div class="spinner-border spinner-border-sm text-light" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          </div>
+        <div *ngIf="searchControl.value && !isLoading && filteredUsers.length === 0" class="alert alert-info">
+          No users found matching "{{ searchControl.value }}"
+        </div>
+        <br>
+        <div class="table-responsive">
+          <table class="table table-striped table-sm">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Firstname</th>
+                <th scope="col">Lastname</th>
+                <th scope="col">Username</th>
+                <th scope="col">Email</th>
+                <th scope="col">Role</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let user of (searchControl.value ? filteredUsers : users); let i= index">
+                <td>{{i+1}}</td>
+                <td>{{user.firstName}}</td>
+                <td>{{user.lastName}}</td>
+                <td>{{user.userName}}</td>
+                <td>{{user.email}}</td>
+                <td>
+                    <span class="badge" [ngClass]="{
+                      'bg-primary': user.role === 'ADMIN',
+                      'bg-warning text-dark': user.role === 'MODERATOR',
+                      'bg-secondary': user.role === 'USER'
+                    }">
+                      {{user.role}}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                      <!-- Update Button -->
+                      <button type="button" class="btn btn-outline-primary" (click)="openEditModal(user)">
+                        <i class="bi bi-pencil-square"></i> Edit
+                      </button>
+                      
+                      <!-- Delete Button -->
+                      <button type="button" class="btn btn-outline-danger" (click)="confirmDelete(user.id)">
+                        <i class="bi bi-trash"></i> Delete
+                      </button>
+                      
+                      <!-- Revoke Button (only for MODERATOR) -->
+                      <button *ngIf="user.role === 'MODERATOR'" type="button" class="btn btn-outline-warning" 
+                              (click)="revokeModerator(user.id)">
+                        <i class="bi bi-person-dash"></i> Revoke
+                      </button>
+                    </div>
+                  </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+      </main>
+    </div>
+  </div>
+
