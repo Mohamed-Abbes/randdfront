@@ -2,8 +2,8 @@ import { AuthService } from './../../services/auth.service';
 import { ApiService } from './../../services/api.service';
 import { Component, OnInit } from '@angular/core';
 import { UserStoreService } from 'src/app/services/user-store.service';
-import { FormControl, FormGroup, Validators  } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, switchMap, catchError  } from 'rxjs/operators';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { EditUserModalComponent } from 'src/app/modal/edit-user-modal/edit-user-modal.component';
@@ -18,7 +18,6 @@ interface User {
   role: string;
 }
 
-
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
@@ -26,9 +25,9 @@ interface User {
 })
 export class DashboardComponent implements OnInit {
 
-  public users:any = [];
-  public role!:string;
-  public fullName : string = "";
+  public users: any = [];
+  public role!: string;
+  public fullName: string = "";
   searchControl = new FormControl();
   filteredUsers: any[] = [];
   isLoading = false;
@@ -39,9 +38,9 @@ export class DashboardComponent implements OnInit {
   selectedUser: any;
   userIdToDelete: number | null = null;
 
-  constructor(private api : ApiService,
-    private auth: AuthService, 
-    private userStore: UserStoreService, 
+  constructor(private api: ApiService,
+    private auth: AuthService,
+    private userStore: UserStoreService,
     private modalService: NgbModal) {
 
     this.editForm = new FormGroup({
@@ -50,9 +49,11 @@ export class DashboardComponent implements OnInit {
       email: new FormControl('', [Validators.required, Validators.email]),
       role: new FormControl('USER')
     });
-   }
+  }
 
-   ngOnInit() {
+  ngOnInit() {
+    console.log("hello from dashboard")
+    this.role = this.auth.getRoleFromToken();
     this.loadUsers();
 
     this.userStore.getFullNameFromStore()
@@ -60,20 +61,12 @@ export class DashboardComponent implements OnInit {
         const fullNameFromToken = this.auth.getfullNameFromToken();
         this.fullName = val || fullNameFromToken;
       });
-
-    this.userStore.getRoleFromStore()
-      .subscribe(val => {
-        const roleFromToken = this.auth.getRoleFromToken();
-        this.role = val || roleFromToken;
-      });
-
     this.setupSearch();
   }
 
   loadUsers() {
     this.api.getUsers().subscribe({
       next: (res) => {
-        // Ensure we always have an array, even if the API wraps it in an object
         this.users = Array.isArray(res) ? res : (res.users || []);
         this.filteredUsers = [...this.users]; // Initialize filteredUsers
       },
@@ -81,7 +74,7 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  
+
   setupSearch() {
     this.searchControl.valueChanges
       .pipe(
@@ -98,7 +91,6 @@ export class DashboardComponent implements OnInit {
         })
       ).subscribe({
         next: (result) => {
-          // Ensure result is always an array
           this.filteredUsers = Array.isArray(result) ? result : [];
           this.isLoading = false;
         },
@@ -109,14 +101,14 @@ export class DashboardComponent implements OnInit {
         }
       });
   }
-   
+
 
   // Edit User Functions
   openEditModal(user: User) {
     const modalRef = this.modalService.open(EditUserModalComponent);
     modalRef.componentInstance.user = user;
     modalRef.componentInstance.isAdmin = this.role === 'ADMIN';
-    
+
     modalRef.result.then((result) => {
       if (result) {
         const updatedUser = { ...user, ...result };
@@ -125,16 +117,16 @@ export class DashboardComponent implements OnInit {
           error: (err) => console.error('Error updating user:', err)
         });
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }
-  
+
   updateUser() {
     if (this.editForm.valid) {
       const updatedUser = {
         ...this.selectedUser,
         ...this.editForm.value
       };
-      
+
       this.api.updateUser(updatedUser).subscribe({
         next: () => {
           this.loadUsers(); // Refresh the list
@@ -147,10 +139,9 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  // Delete User Functions
   confirmDelete(userId: number) {
     const modalRef = this.modalService.open(DeleteConfirmModalComponent);
-    
+
     modalRef.result.then((result) => {
       if (result) {
         this.api.deleteUser(userId).subscribe({
@@ -158,14 +149,15 @@ export class DashboardComponent implements OnInit {
           error: (err) => console.error('Error deleting user:', err)
         });
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }
-  
+
   deleteUser() {
     if (this.userIdToDelete) {
+      console.log("Logging... "+this.userIdToDelete)
       this.api.deleteUser(this.userIdToDelete).subscribe({
         next: () => {
-          this.loadUsers(); // Refresh the list
+          this.loadUsers(); 
           this.modalService.dismissAll();
           this.userIdToDelete = null;
         },
@@ -175,12 +167,12 @@ export class DashboardComponent implements OnInit {
       });
     }
   }
-  
+
   revokeModerator(userId: number) {
     if (confirm('Are you sure you want to revoke moderator privileges for this user?')) {
       this.api.updateUserRole(userId, 'USER').subscribe({
         next: () => {
-          this.loadUsers(); // Refresh the list
+          this.loadUsers();
         },
         error: (err) => {
           console.error('Error revoking moderator:', err);
@@ -188,11 +180,11 @@ export class DashboardComponent implements OnInit {
       });
     }
   }
-  
 
-  logout(){
+
+  logout() {
     this.auth.signOut();
   }
-  
-  
+
+
 }

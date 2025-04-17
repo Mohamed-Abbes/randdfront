@@ -8,41 +8,65 @@ import { AuthService } from 'src/app/services/auth.service';
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent implements OnInit {
+  private readonly apiUrl = 'http://localhost:8090/api/articles';
+
   articles: any[] = [];
-  apiUrl = 'http://localhost:8090/api/articles';
-  newArticle = { title: '', content: '', category: '', user: { id: '' } };
-  searchInput = '';
   categories = ['AI', 'CYBERSEC', 'NLP'];
-  fullName = '';
+
+  readonly articleStatus = {
+    PENDING: 'PENDING',
+    APPROVED: 'APPROVED',
+    REJECTED: 'REJECTED'
+  };
+
+  newArticle = {
+    title: '',
+    content: '',
+    doi: '',
+    category: '',
+    user: { id: '' }
+  };
+
   currentUserId = '';
   currentUserEmail = '';
+  fullName = '';
+  userRole = '';
+
+  searchInput = '';
   isUpdating = false;
   updatingArticleId: number | null = null;
+  currentFilter: 'all' | 'pending' | 'approved' | 'rejected' = 'all';
 
-  constructor(private http: HttpClient, private authService: AuthService) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) { }
 
   ngOnInit(): void {
-    this.currentUserId = this.authService.getIdFromToken();
-    this.currentUserEmail = this.authService.getEmailFromToken();
-    this.fullName = this.authService.getfullNameFromToken();
-    this.newArticle.user.id = this.currentUserId;
+    this.initializeUserData();
     this.getAllArticles();
   }
 
-  isArticleOwner(article: any): boolean {
-    return article.user?.id === this.currentUserId;
+  private initializeUserData(): void {
+    this.currentUserId = this.authService.getIdFromToken();
+    this.currentUserEmail = this.authService.getEmailFromToken();
+    this.fullName = this.authService.getfullNameFromToken();
+    this.userRole = this.authService.getRoleFromToken();
+    this.newArticle.user.id = this.currentUserId;
   }
-  
-  //Show all articles
-  getAllArticles(): void {
-    this.http.get<any>(`${this.apiUrl}/all`).subscribe({
+
+  getAllArticles(filter: 'all' | 'pending' | 'approved' | 'rejected' = 'all'): void {
+    let endpoint = `${this.apiUrl}/all`;
+    if (filter !== 'all') endpoint = `${this.apiUrl}/${filter}`;
+
+    this.http.get<any>(endpoint).subscribe({
       next: (response) => {
-        this.articles = response?.articles || [];
-        // Ensure each article has a pdfUrl property
+        this.articles = response?.articles || response || [];
         this.articles = this.articles.map(article => ({
           ...article,
           pdfUrl: article.pdfUrl || null
         }));
+        this.currentFilter = filter;
       },
       error: (error) => {
         console.error('Error fetching articles:', error);
@@ -50,35 +74,25 @@ export class HomeComponent implements OnInit {
       }
     });
   }
-  //Adding article
+
   addArticle(): void {
     if (!this.validateArticle()) return;
     const articleData = {
-      title: this.newArticle.title,
-      content: this.newArticle.content,
-      category: this.newArticle.category,
-      user: { id: this.currentUserId }
+      ...this.newArticle,
+      status: this.articleStatus.PENDING
     };
 
     this.http.post<any>(this.apiUrl, articleData).subscribe({
       next: () => {
-        this.getAllArticles();
+        alert('Article submitted for moderation');
+        this.getAllArticles(this.currentFilter);
         this.resetForm();
       },
-      error: (error) => console.error('Error adding article:', error)
+      error: (error) => {
+        console.error('Error adding article:', error);
+        alert('Error: ' + error);
+      }
     });
-  }
-
-  //Updating Article
-  prepareUpdate(article: any): void {
-    this.isUpdating = true;
-    this.updatingArticleId = article.id;
-    this.newArticle = {
-      title: article.title,
-      content: article.content,
-      category: article.category,
-      user: { id: this.currentUserId }
-    };
   }
 
   updateArticle(): void {
@@ -93,7 +107,7 @@ export class HomeComponent implements OnInit {
 
     this.http.put<any>(`${this.apiUrl}/update/${this.updatingArticleId}`, articleData).subscribe({
       next: () => {
-        this.getAllArticles();
+        this.getAllArticles(this.currentFilter);
         this.resetForm();
         this.cancelUpdate();
       },
@@ -101,33 +115,52 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  cancelUpdate(): void {
-    this.isUpdating = false;
-    this.updatingArticleId = null;
-    this.resetForm();
-  }
-
-  //Deleting the article
   deleteArticle(id: number): void {
-    if (confirm('Are you sure you want to delete this article?')) {
-      this.http.delete<any>(`${this.apiUrl}/delete/${id}`).subscribe({
-        next: () => this.getAllArticles(),
-        error: (error) => console.error('Error deleting article:', error)
-      });
-    }
+    if (!confirm('Are you sure you want to delete this article?')) return;
+
+    this.http.delete<any>(`${this.apiUrl}/delete/${id}`).subscribe({
+      next: () => this.getAllArticles(this.currentFilter),
+      error: (error) => console.error('Error deleting article:', error)
+    });
   }
 
+  downloadPdf(articleId: number): void {
+    const link = document.createElement('a');
+    link.href = `${this.apiUrl}/download-pdf/${articleId}`;
+    link.target = '_blank';
+    link.download = `article_${articleId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
-  //Searching an article
+  uploadPdf(articleId: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.http.post<any>(`${this.apiUrl}/upload-pdf/${articleId}`, formData).subscribe({
+      next: () => {
+        this.getAllArticles(this.currentFilter);
+        input.value = '';
+      },
+      error: (error) => console.error('Error uploading PDF:', error)
+    });
+  }
+
   searchArticle(): void {
-    if (!this.searchInput.trim()) {
-      this.getAllArticles();
+    const trimmed = this.searchInput.trim();
+    if (!trimmed) {
+      this.getAllArticles(this.currentFilter);
       return;
     }
 
-    this.http.get<any>(`${this.apiUrl}/search?input=${this.searchInput}`).subscribe({
+    this.http.get<any>(`${this.apiUrl}/search?input=${trimmed}`).subscribe({
       next: (response) => {
-        this.articles = response?.data || response?.articles || [];
+        this.articles = response?.articles || response?.data || [];
       },
       error: (error) => {
         console.error('Error searching articles:', error);
@@ -138,60 +171,61 @@ export class HomeComponent implements OnInit {
 
   clearSearch(): void {
     this.searchInput = '';
-    this.getAllArticles();
-  }
-
-
-  //Attaching PDF to the article
-  uploadPdf(articleId: number, event: any): void {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    this.http.post<any>(`${this.apiUrl}/upload-pdf/${articleId}`, formData).subscribe({
-      next: () => {
-        this.getAllArticles();
-        event.target.value = '';
-      },
-      error: (error) => console.error('Error uploading PDF:', error)
-    });
-  }
-
-
-
-  downloadPdf(pdfUrl: string): void {
-    if (!pdfUrl) return;
-    
-    // Create a temporary anchor element to trigger the download
-    const link = document.createElement('a');
-    link.href = pdfUrl;
-    link.target = '_blank';
-    link.download = `article_${new Date().getTime()}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    this.getAllArticles(this.currentFilter);
   }
 
   validateArticle(): boolean {
     if (!this.newArticle.title || !this.newArticle.content || !this.newArticle.category) {
-      alert('Please fill all fields');
+      alert('Please fill all required fields');
       return false;
     }
     return true;
   }
 
   resetForm(): void {
-    this.newArticle = { 
-      title: '', 
-      content: '', 
-      category: '', 
-      user: { id: this.currentUserId } 
+    this.newArticle = {
+      title: '',
+      content: '',
+      doi: '',
+      category: '',
+      user: { id: this.currentUserId }
     };
+  }
+
+  prepareUpdate(article: any): void {
+    this.isUpdating = true;
+    this.updatingArticleId = article.id;
+    this.newArticle = {
+      title: article.title,
+      content: article.content,
+      doi: article.doi,
+      category: article.category,
+      user: { id: this.currentUserId }
+    };
+  }
+
+  cancelUpdate(): void {
+    this.isUpdating = false;
+    this.updatingArticleId = null;
+    this.resetForm();
+  }
+
+  isArticleOwner(article: any): boolean {
+    return article.user?.id === this.currentUserId;
   }
 
   logout(): void {
     this.authService.signOut();
   }
+
+  isAdmin(): boolean {
+    console.log(this.userRole)
+    return this.userRole === 'ADMIN';
+  }
+
+  isModerator(): boolean {
+    console.log(this.userRole)
+    return this.userRole === 'MODERATOR';
+  }
+
 }

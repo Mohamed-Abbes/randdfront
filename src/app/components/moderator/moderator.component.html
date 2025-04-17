@@ -1,0 +1,138 @@
+<app-nav-bar></app-nav-bar>
+
+
+<div class="container mt-4">
+  <div class="card">
+    <div class="card-header bg-primary text-white">
+      <h3>Moderator Control Panel</h3>
+    </div>
+    <div class="card-body">
+      <!-- Filter buttons -->
+      <div class="btn-group mb-4" role="group">
+        <button type="button" 
+                class="btn" 
+                [class.btn-primary]="currentFilter === 'pending'"
+                [class.btn-outline-primary]="currentFilter !== 'pending'"
+                (click)="setFilter('pending')">
+          Pending Review <span class="badge bg-secondary">{{pendingArticles.length}}</span>
+        </button>
+        <button type="button" 
+                class="btn" 
+                [class.btn-success]="currentFilter === 'approved'"
+                [class.btn-outline-success]="currentFilter !== 'approved'"
+                (click)="setFilter('approved')">
+          Approved <span class="badge bg-secondary">{{approvedArticles.length}}</span>
+        </button>
+        <button type="button" 
+                class="btn" 
+                [class.btn-danger]="currentFilter === 'rejected'"
+                [class.btn-outline-danger]="currentFilter !== 'rejected'"
+                (click)="setFilter('rejected')">
+          Rejected <span class="badge bg-secondary">{{rejectedArticles.length}}</span>
+        </button>
+      </div>
+
+      <!-- Articles list -->
+      <div *ngIf="getCurrentArticles().length > 0; else noArticles">
+        <div class="list-group">
+          <div *ngFor="let article of getCurrentArticles()" class="list-group-item mb-3">
+            <div class="d-flex justify-content-between">
+              <h5>{{article.title}}</h5>
+              <span class="badge" [ngClass]="{
+                'bg-warning': article.status === 'PENDING',
+                'bg-success': article.status === 'APPROVED',
+                'bg-danger': article.status === 'REJECTED'
+              }">
+                {{article.status}}
+              </span>
+            </div>
+            <p class="mb-1">{{article.content | truncate:100}}</p>
+            <small class="text-muted">Submitted by: {{article.user?.email || 'Unknown'}}</small>
+            <div class="mt-2">
+              <span class="badge bg-info">{{article.category}}</span>
+              <span *ngIf="article.doi" class="badge bg-secondary ms-1">DOI: {{article.doi}}</span>
+            </div>
+
+            <!-- Action buttons for pending articles -->
+            <div *ngIf="article.status === 'PENDING'" class="mt-3">
+              <button class="btn btn-success btn-sm me-2" (click)="approveArticle(article.id)">
+                <i class="bi bi-check-circle"></i> Approve
+              </button>
+              <button class="btn btn-danger btn-sm me-2" (click)="openRejectionModal(article.id)">
+                <i class="bi bi-x-circle"></i> Reject
+              </button>
+              <!-- <a *ngIf="article.pdfUrl" [href]="article.pdfUrl" target="_blank" class="btn btn-primary btn-sm">
+                <i class="bi bi-file-earmark-pdf"></i> View PDF
+              </a> -->
+              <button class="btn btn-sm btn-info" (click)="downloadPdf(article.id)">Download</button>
+            </div>
+
+            <!-- Rejection reason for rejected articles -->
+            <div *ngIf="article.status === 'REJECTED' && article.rejectionReason" class="mt-2">
+              <div class="alert alert-danger p-2">
+                <strong>Rejection Reason:</strong> {{article.rejectionReason}}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noArticles>
+        <div class="alert alert-info">
+          No {{currentFilter}} articles found.
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</div>
+
+<!-- Rejection Modal -->
+<div class="modal fade" [class.show]="showRejectionModal" [style.display]="showRejectionModal ? 'block' : 'none'">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Reject Article</h5>
+        <button type="button" class="btn-close" (click)="cancelRejection()"></button>
+      </div>
+      <div class="modal-body">
+        <p>Please provide a reason for rejecting this article:</p>
+        <textarea class="form-control" rows="3" [(ngModel)]="rejectionReason"></textarea>
+      </div>
+      <div *ngFor="let article of articles">  <!-- article is single Article -->
+        <div *ngIf="canModerate(article)" class="moderator-actions">
+          <!-- Now article.id is valid because article is single Article -->
+          <button (click)="approveArticle(article.id)">Approve</button>
+          <button (click)="rejectArticle(article.id, 'Inappropriate content')">Reject</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add this at the bottom of your moderator.component.html -->
+<div *ngIf="showRejectionModal" class="modal fade show" style="display: block; background: rgba(0,0,0,0.5)">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Reject Article</h5>
+        <button type="button" class="btn-close" (click)="closeRejectionModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="rejectionReason" class="form-label">Reason for rejection:</label>
+          <textarea 
+            class="form-control" 
+            id="rejectionReason" 
+            rows="3" 
+            [(ngModel)]="rejectionReason"
+            placeholder="Please specify the reason for rejection..."
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeRejectionModal()">Cancel</button>
+        <button type="button" class="btn btn-danger" (click)="submitRejection()">Submit Rejection</button>
+      </div>
+    </div>
+  </div>
+</div>

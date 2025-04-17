@@ -15,7 +15,10 @@ import { EditUserModalComponent } from './modal/edit-user-modal/edit-user-modal.
 import { DeleteConfirmModalComponent } from './modal/delete-confirm-modal/delete-confirm-modal.component';
 import { NewPasswordComponent } from './components/new-password/new-password.component';
 import { HomeComponent } from './components/home/home.component';
-import { ArticleComponent } from './components/article/article.component';
+import { ModeratorComponent } from './components/moderator/moderator.component';
+import { TruncatePipe } from './helpers/truncate.pipe';
+import { CommonModule } from '@angular/common';
+import { NavBarComponent } from './components/nav-bar/nav-bar.component';
 
 @NgModule({
   declarations: [
@@ -28,7 +31,9 @@ import { ArticleComponent } from './components/article/article.component';
     DeleteConfirmModalComponent,
     NewPasswordComponent,
     HomeComponent,
-    ArticleComponent,
+    ModeratorComponent,
+    TruncatePipe,
+    NavBarComponent
   ],
   imports: [
     BrowserModule,
@@ -36,8 +41,9 @@ import { ArticleComponent } from './components/article/article.component';
     ReactiveFormsModule,
     FormsModule,
     HttpClientModule,
-    NgToastModule
-  ],
+    NgToastModule,
+    CommonModule
+    ],
   providers: [{
     provide:HTTP_INTERCEPTORS,
     useClass:TokenInterceptor,

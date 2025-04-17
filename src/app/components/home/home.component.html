@@ -1,15 +1,4 @@
-<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
-  <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="#" routerLink="/dashboard">Hello <h3>{{fullName}}</h3></a>
-  <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
-  </button>
-  
-  <div class="navbar-nav">
-    <div class="nav-item text-nowrap">
-      <a style="background: red; color: #fff; border-radius: 4px; margin: 10px;" class="nav-link px-3" (click)="logout()">Sign out</a>
-    </div>
-  </div>
-</header>
+<app-nav-bar></app-nav-bar>
 
 <!-- Search -->
 <div class="mb-3 container mt-3">
@@ -26,7 +15,7 @@
     <h5 class="card-title">{{isUpdating ? 'Update Article' : 'Add New Article'}}</h5>
     <input class="form-control mb-2" [(ngModel)]="newArticle.title" placeholder="Title" />
     <textarea class="form-control mb-2" [(ngModel)]="newArticle.content" placeholder="Content"></textarea>
-    
+    <input class="form-control mb-2" [(ngModel)]="newArticle.doi" placeholder="DOI" />
     <select class="form-select mb-2" [(ngModel)]="newArticle.category">
       <option value="" disabled selected>Select a category</option>
       <option *ngFor="let category of categories" [value]="category">{{category}}</option>
@@ -47,26 +36,31 @@
         <th>Title</th>
         <th>Content</th>
         <th>Category</th>
+        <th>DOI</th>
         <th>Author</th>
+        <th>Status</th>
         <th>Actions</th>
         <th>PDF</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let article of articles">
+        
         <td>{{ article.title }}</td>
         <td>{{ article.content }}</td>
         <td>{{ article.category }}</td>
+        <td>{{ article.doi }}</td>
         <td>{{ article.user?.firstName }} {{ article.user?.lastName }}</td>
+        <td>{{article.status}}</td>
         <td>
-          <button *ngIf="isArticleOwner(article)" class="btn btn-warning btn-sm me-1" (click)="prepareUpdate(article)">Edit</button>
-          <button *ngIf="isArticleOwner(article)" class="btn btn-danger btn-sm" (click)="deleteArticle(article.id)">Delete</button>
+          <button *ngIf="isArticleOwner(article) || isAdmin()|| isModerator()" class="btn btn-warning btn-sm me-1" (click)="prepareUpdate(article)">Edit</button>
+          <button *ngIf="isArticleOwner(article) || isAdmin() || isModerator()" class="btn btn-danger btn-sm" (click)="deleteArticle(article.id)">Delete</button>
         </td>
         <td>
-          <div *ngIf="article.pdfUrl" class="btn-group">
-            <button class="btn btn-sm btn-info" (click)="downloadPdf(article.pdfUrl)">Download</button>
+          <div *ngIf="true" class="btn-group">
+            <button class="btn btn-sm btn-info" (click)="downloadPdf(article.id)">Download</button>
           </div>
-          <input *ngIf="isArticleOwner(article)" type="file" class="form-control form-control-sm mt-1" (change)="uploadPdf(article.id, $event)" accept=".pdf" />
+          <input *ngIf="isArticleOwner(article) " type="file" class="form-control form-control-sm mt-1" (change)="uploadPdf(article.id, $event)" accept=".pdf" />
         </td>
       </tr>
     </tbody>

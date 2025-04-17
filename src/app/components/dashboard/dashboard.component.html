@@ -1,15 +1,4 @@
-<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
-    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="#" routerLink="/dashboard">Hello <h3>{{fullName}}</h3></a>
-    <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    
-    <div class="navbar-nav">
-      <div class="nav-item text-nowrap">
-        <a style="background: red; color: #fff; border-radius: 4px; margin: 10px;" class="nav-link px-3" (click)="logout()">Sign out</a>
-      </div>
-    </div>
-  </header>
+<app-nav-bar></app-nav-bar>
   
   <div class="container-fluid">
     <div class="row">
@@ -18,7 +7,7 @@
           <!-- sidebar -->
           <h1>Admin powers</h1>
            <ul>
-            <li><a>option 1</a></li>
+            <li><div class="text-center pt-4 text-muted"><a id="forgot" href="#" routerLink="/home">View articles</a> </div></li>
             <li><a>option 2</a></li>
             <li><a>option 3</a></li>
            </ul>

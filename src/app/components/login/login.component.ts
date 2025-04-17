@@ -16,12 +16,13 @@ export class LoginComponent implements OnInit {
   type: string = 'password';
   isText: boolean = false;
   eyeIcon: string = 'fa-eye-slash';
+  
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
     private router: Router,
     private toast: NgToastService,
-    private userStore: UserStoreService
+    private userStore: UserStoreService,
   ) {}
 
   ngOnInit() {
@@ -64,4 +65,5 @@ export class LoginComponent implements OnInit {
       ValidateForm.validateAllFormFields(this.loginForm);
     }
   }
+
 }

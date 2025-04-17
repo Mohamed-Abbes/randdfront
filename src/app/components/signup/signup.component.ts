@@ -38,7 +38,7 @@ export class SignupComponent implements OnInit {
       console.log(this.signUpForm.value);
       let signUpObj = {
         ...this.signUpForm.value,
-        role:'USER',                                      //med added USER to role:''
+        role:'USER',                                    
         token:''
       }
       this.auth.signUp(signUpObj)

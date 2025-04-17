@@ -9,12 +9,12 @@ import { HttpClient } from '@angular/common/http';
   styleUrls: ['./new-password.component.scss']
 })
 export class NewPasswordComponent implements OnInit {
+  private baseUrl: string = 'http://localhost:8090/api/auth/';
   resetForm: FormGroup;
   token: string = '';
   message: string = '';
   isError: boolean = false;
   isLoading: boolean = false;
-  private baseUrl: string = 'http://localhost:8090/api/auth/';
 
   constructor(
     private fb: FormBuilder,

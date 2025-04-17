@@ -25,7 +25,7 @@ export class ApiService {
   }
 
   deleteUser(userId: number) {
-    console.log(userId);
+    console.log("User Id of the user to delete: " + userId);
     return this.http.delete(`${this.baseUrl}/delete/${userId}`);
   }
 
