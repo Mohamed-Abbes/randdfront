@@ -106,7 +106,7 @@ export class ModeratorComponent implements OnInit {
     this.http.put<any>(`${this.apiUrl}/approve/${articleId}`, {}).subscribe({
       next: () => {
         this.showSuccessMessage('Article approved');
-        this.loadAllArticles
+        this.loadAllArticles();
 
       },
       error: (error) => {
@@ -124,7 +124,7 @@ export class ModeratorComponent implements OnInit {
     this.http.put<any>(`${this.apiUrl}/reject/${articleId}`, { reason }).subscribe({
       next: () => {
         this.showSuccessMessage('Article rejected');
-        this.loadAllArticles
+        this.loadAllArticles();
       },
       error: (error) => {
         console.error('Error rejecting article:', error);
