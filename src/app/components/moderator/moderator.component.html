@@ -98,7 +98,8 @@
         <p>Please provide a reason for rejecting this article:</p>
         <textarea class="form-control" rows="3" [(ngModel)]="rejectionReason"></textarea>
       </div>
-      <div *ngFor="let article of articles">  <!-- article is single Article -->
+      <div *ngFor="let article of articles"> 
+        <!-- article is single Article -->
         <div *ngIf="canModerate(article)" class="moderator-actions">
           <!-- Now article.id is valid because article is single Article -->
           <button (click)="approveArticle(article.id)">Approve</button>

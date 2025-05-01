@@ -1,6 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from 'src/app/services/auth.service';
+interface PredictionResponse {
+  category?: string;
+  confidence?: number;
+  error?: string;
+}
 
 @Component({
   selector: 'app-home',
@@ -36,6 +41,7 @@ export class HomeComponent implements OnInit {
   isUpdating = false;
   updatingArticleId: number | null = null;
   currentFilter: 'all' | 'pending' | 'approved' | 'rejected' = 'all';
+
 
   constructor(
     private http: HttpClient,
@@ -101,7 +107,7 @@ export class HomeComponent implements OnInit {
     const articleData = {
       title: this.newArticle.title,
       content: this.newArticle.content,
-      category: this.newArticle.category,
+      //category: this.newArticle.category,
       user: { id: this.currentUserId }
     };
 
@@ -134,22 +140,60 @@ export class HomeComponent implements OnInit {
     document.body.removeChild(link);
   }
 
-  uploadPdf(articleId: number, event: Event): void {
+  async uploadPdf(articleId: number, event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+  
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+  
+      // First upload the PDF
+      this.http.post<any>(`${this.apiUrl}/upload-pdf/${articleId}`, formData).subscribe({
+        next: async () => {
+          // After successful upload, get prediction for tags
+          try {
+            const predictionResponse = await this.http.post<{category: string, confidence: number}>(
+              'http://localhost:5000/predict', 
+              formData
+            ).toPromise();
+            
+            if (predictionResponse) {
+              // Update the article with the predicted category as a tag
+              const tag = predictionResponse.category;
+              const updateData = { tag: tag };
+              console.log("Prediction response: ", updateData)
 
-    const formData = new FormData();
-    formData.append('file', file);
-
-    this.http.post<any>(`${this.apiUrl}/upload-pdf/${articleId}`, formData).subscribe({
-      next: () => {
-        this.getAllArticles(this.currentFilter);
-        input.value = '';
-      },
-      error: (error) => console.error('Error uploading PDF:', error)
-    });
+              await this.http.put(`${this.apiUrl}/update/${articleId}`, updateData).toPromise();
+            }
+          } catch (predictionError) {
+            console.error('Error getting prediction:', predictionError);
+          }
+          
+          // Refresh the articles list
+          this.getAllArticles(this.currentFilter);
+          input.value = '';
+        },
+        error: (error) => console.error('Error uploading PDF:', error)
+      });
+    } catch (error) {
+      console.error('Error processing PDF:', error);
+    }
   }
+
+updateArticleCategory(articleId: number, category: string): void {
+  const articleData = {
+    category: category
+  };
+
+  this.http.patch<any>(`${this.apiUrl}/update/${articleId}`, articleData).subscribe({
+    next: () => {
+      this.getAllArticles(this.currentFilter);
+    },
+    error: (error) => console.error('Error updating article category:', error)
+  });
+}
 
   searchArticle(): void {
     const trimmed = this.searchInput.trim();
@@ -226,6 +270,37 @@ export class HomeComponent implements OnInit {
   isModerator(): boolean {
     console.log(this.userRole)
     return this.userRole === 'MODERATOR';
+  }
+
+
+  predictPdfCategory(filex: File): Promise<string> {
+    const file = new FormData();
+    file.append('file', filex);
+  
+    return this.http.post<PredictionResponse>('http://localhost:5000/predict', file).toPromise()
+      .then((response: PredictionResponse | undefined) => {
+        if (!response) {
+          console.error('Empty response from prediction API');
+          return '';
+        }
+  
+        if ('error' in response && response.error) {
+          console.error('Prediction API error:', response.error);
+          return '';
+        }
+  
+        if ('category' in response && response.category) {
+          console.log(`Predicted category returned: ${response.category}, Confidence: ${response.confidence}`);
+          return response.category;
+        }
+  
+        console.error('Unexpected response format:', response);
+        return '';
+      })
+      .catch((error) => {
+        console.error('Error predicting PDF category:', error);
+        return '';
+      });
   }
 
 }

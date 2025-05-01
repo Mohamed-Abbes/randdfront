@@ -18,7 +18,7 @@
     <input class="form-control mb-2" [(ngModel)]="newArticle.doi" placeholder="DOI" />
     <select class="form-select mb-2" [(ngModel)]="newArticle.category">
       <option value="" disabled selected>Select a category</option>
-      <option *ngFor="let category of categories" [value]="category">{{category}}</option>
+    <option *ngFor="let category of categories" [value]="category">{{category}}</option>
     </select>
     
     <button class="btn btn-success me-2" (click)="isUpdating ? updateArticle() : addArticle()">
@@ -36,6 +36,7 @@
         <th>Title</th>
         <th>Content</th>
         <th>Category</th>
+        <th>Tags</th>
         <th>DOI</th>
         <th>Author</th>
         <th>Status</th>
@@ -49,6 +50,7 @@
         <td>{{ article.title }}</td>
         <td>{{ article.content }}</td>
         <td>{{ article.category }}</td>
+        <td>{{ article.tag }}</td>
         <td>{{ article.doi }}</td>
         <td>{{ article.user?.firstName }} {{ article.user?.lastName }}</td>
         <td>{{article.status}}</td>

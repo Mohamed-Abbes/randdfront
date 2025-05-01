@@ -30,8 +30,6 @@ export class ModeratorComponent implements OnInit {
   ngOnInit(): void {
     this.currentUserId = this.authService.getIdFromToken();
     this.loadAllArticles();
-    console.log("Is this Moderator: " + this.isModerator());
-    console.log()
   }
 
   loadAllArticles(): void {
